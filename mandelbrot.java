@@ -1,6 +1,6 @@
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
+
+
 import javax.swing.BoxLayout;
 
 import javax.swing.JFrame;
@@ -17,15 +17,20 @@ import java.awt.image.BufferedImage;
 
 class mandelbrot extends JPanel {
 
-    public static double width = 531;
-    public static double height = 472;
+    public static int width = 1200;
+    public static int height = 900;
 
     public static mandelbrot m;
 
     public static double r = 0;
     public static double c = 0;
 
-    public static BufferedImage image = new BufferedImage(531, 472, BufferedImage.TYPE_INT_RGB);
+
+    public static double xOff = 0.0;
+    public static double yOff = 0.0;
+    public static double zoom = 1;
+
+    public static BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
     public static void main(String[] args) {
         JFrame f = new JFrame();
@@ -68,12 +73,66 @@ class mandelbrot extends JPanel {
 
         });
 
+
+
+        JLabel xL = new JLabel("X OFFSET : 2");
+
+        JSlider x_slider = new JSlider(-3000, 3000);
+        x_slider.addChangeListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                xOff = ((double) x_slider.getValue()/1000);
+                xL.setText("X OFFSET : " + xOff);
+                m.repaint();
+            }
+
+        });
+
+         JLabel yL = new JLabel("Y OFFSET : 0");
+
+        JSlider y_slider = new JSlider(-2000, 2000);
+        y_slider.addChangeListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                yOff = ((double) y_slider.getValue() / 1000);
+                yL.setText("Y OFFSET : " + yOff);
+                m.repaint();
+            }
+
+        });
+
+
+        JLabel zL = new JLabel("Zoom : 200");
+
+        JSlider z_slider = new JSlider(1, 100000);
+        z_slider.addChangeListener(new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                zoom = ((double) z_slider.getValue() / 100000);
+                zL.setText("ZOOM : " + zoom);
+                m.repaint();
+            }
+
+        });
+
         container.add(m);
 
         sideBar.add(rL);
         sideBar.add(real);
         sideBar.add(cL);
         sideBar.add(complex);
+
+        sideBar.add(xL);
+        sideBar.add(x_slider);
+
+        sideBar.add(yL);
+        sideBar.add(y_slider);
+
+        sideBar.add(zL);
+        sideBar.add(z_slider);
 
         container.add(sideBar);
 
@@ -96,63 +155,67 @@ class mandelbrot extends JPanel {
         return Zn(depth - 1, z, c);
     }
 
+
+    // x range: (-2.1 to 0.6)
+    // y range: (-1.2 to 1.2)
+
+    //Real ranges: x: -2 to 1, y: -1 to 1
+
+    
     @Override
     public void paint(Graphics g) {
         super.paint(g);
 
         Graphics2D m = (Graphics2D) g;
-        int depth = 50;
-        double density = 600.0;
+        int depth = 150;
 
-        double xScale = 2.7 / density;
-        double yScale = 2.4 / density;
 
-      
+        double xmin = -3.0 * zoom;
+        double xmax = 1.0 * zoom;
+        double ymin = -1.0 * zoom;
+        double ymax = 1.0 * zoom;
+
+        System.out.println(xmin + " " + xmax);
+
+        double xStep = (Math.abs(xmin) + Math.abs(xmax)) / width ;
+        double yStep = (Math.abs(ymin) + Math.abs(ymax)) / height ;
+
+        xmin -= xOff;
+        xmax -= xOff;
+
+        ymin -= yOff;
+        ymax -= yOff;
 
         m.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        for (double y = -1.2; y <= 1.2; y += yScale) {
-            for (double x = -2.1; x <= 0.6; x += xScale) {
+        
 
-                
-                // m.setColor(new Color((int) (255 / depth) * z, (int) (255 / depth) * z, (int) (255 / depth) * z));
-                // m.fillRect((int) ((x + 2.1) * width / 2.7), (int) ((y + 1.2) * height / 2.4),
-                //         (int) (width / density) + 1, (int) (height / density) + 1);
+        // for (int i =0; i < width;i++){
+        //     for (int j = 0; j < height; j++) {
 
-
-                int z = Zn(depth, new Complex(r, c), new Complex(x, y));
-                image.setRGB((int) ((x + 2.1) * width / 2.7), (int) ((y + 1.2) * height / 2.4), new Color((int) (255 / depth) * z, (int) (255 / depth) * z, (int) (255 / depth) * z).getRGB());
-            }
-        }
-
-        // BufferedImage i2 = new BufferedImage(531, 472, BufferedImage.TYPE_INT_RGB);
-        // for(int x = 1; x < width - 1; x++) {
-        //     for(int y = 1; y < height - 1; y++) {
-        //         int r = 0;
-        //         int gr = 0;
-        //         int b = 0;
-
-        //         for (int u = x-1; u< x + 1; u++) {
-        //             for (int v = y-1; v< y + 1; v++) {
-        //                 Color tmp = new Color(image.getRGB(u, v));
-
-        //                 r += tmp.getRed();
-        //                 gr += tmp.getGreen();
-        //                 b += tmp.getBlue();
-        //             }
-        //         }
-                
-        //         r /= 9;
-        //         gr /= 9;
-        //         b /= 9;
-
-        //         i2.setRGB(x, y, new Color(r,gr,b).brighter().getRGB());
-
-
+        //         int z = Zn(depth, new Complex(r, c), new Complex((Double.valueOf(i) - xOff)/ zoom, (Double.valueOf(j) - yOff) / zoom));
+        //         image.setRGB(i, j, new Color(z,z,z).getRGB());
         //     }
+
         // }
 
-        // image = i2;
+
+        for (int i =0; i < width;i++){
+            for (int j = 0; j < height; j++) {
+
+                int z = Zn(depth, new Complex(r, c), new Complex(xmin  + Double.valueOf(i) * xStep, ymin + Double.valueOf(j) * yStep));
+                image.setRGB(i, j, new Color(z,z,z).getRGB());
+
+                if( xmin + Double.valueOf(i) * xStep + 0.01 >= 0 &&  xmin + Double.valueOf(i) * xStep  <= 0){
+                    if( ymin + Double.valueOf(j) * yStep + 0.01 >= 0 &&  ymin + Double.valueOf(j) * yStep  <= 0){
+                        image.setRGB(i, j, new Color(255,z,z).getRGB());
+                    }
+
+                }
+
+            }
+
+        }
 
 
         m.drawImage(image, null, 0, 0);
